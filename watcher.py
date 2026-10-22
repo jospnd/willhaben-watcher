@@ -33,6 +33,13 @@ NEXT_DATA_RE = re.compile(
 )
 
 
+def slugify(text: str) -> str:
+    text = text.lower()
+    for a, b in (("ä", "ae"), ("ö", "oe"), ("ü", "ue"), ("ß", "ss")):
+        text = text.replace(a, b)
+    return re.sub(r"[^a-z0-9]+", "-", text).strip("-")
+
+
 def fetch_ads(url: str) -> list[dict]:
     r = requests.get(url, headers=HEADERS, timeout=30)
     r.raise_for_status()
@@ -60,12 +67,17 @@ def fetch_ads(url: str) -> list[dict]:
 
         ad_id = str(ad["id"])
         seo = first("SEO_URL").strip()
-        if seo.startswith("http"):
-            link = seo
-        elif seo:
-            link = f"https://www.willhaben.at/{seo.lstrip('/')}"
+        if seo:
+            # Domain entfernen und sicherstellen, dass der Pfad mit "iad/" beginnt
+            path = re.sub(r"^https?://[^/]+/", "", seo).lstrip("/")
+            if not path.startswith("iad/"):
+                path = "iad/" + path
+            if "?" not in path and not path.endswith("/"):
+                path += "/"
+            link = f"https://www.willhaben.at/{path}"
         else:
-            link = f"https://www.willhaben.at/iad/object?adId={ad_id}"
+            slug = slugify(ad.get("description", ""))
+            link = f"https://www.willhaben.at/iad/kaufen-und-verkaufen/d/{slug}-{ad_id}/"
         ads.append(
             {
                 "id": ad_id,
