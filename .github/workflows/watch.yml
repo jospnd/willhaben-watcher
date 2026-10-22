@@ -1,8 +1,6 @@
 name: willhaben-watcher
 
 on:
-  schedule:
-    - cron: "*/5 * * * *"
   workflow_dispatch:
 
 permissions:
