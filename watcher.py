@@ -59,12 +59,13 @@ def fetch_ads(url: str) -> list[dict]:
             price_num = None
 
         ad_id = str(ad["id"])
-        seo = first("SEO_URL")
-        link = (
-            f"https://www.willhaben.at/{seo.lstrip('/')}"
-            if seo
-            else f"https://www.willhaben.at/iad/object?adId={ad_id}"
-        )
+        seo = first("SEO_URL").strip()
+        if seo.startswith("http"):
+            link = seo
+        elif seo:
+            link = f"https://www.willhaben.at/{seo.lstrip('/')}"
+        else:
+            link = f"https://www.willhaben.at/iad/object?adId={ad_id}"
         ads.append(
             {
                 "id": ad_id,
@@ -82,6 +83,7 @@ def notify(server: str, topic: str, title: str, message: str, click: str | None 
     payload = {"topic": topic, "title": title, "message": message, "tags": ["mag"]}
     if click:
         payload["click"] = click
+        payload["actions"] = [{"action": "view", "label": "Öffnen", "url": click}]
     r = requests.post(server, json=payload, timeout=15)
     r.raise_for_status()
 
